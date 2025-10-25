@@ -1,6 +1,6 @@
 /* ===== ODAM - CSS OPTIMIZADO PARA MÁXIMO RENDIMIENTO ===== */
 
-/* === NUEVAS OPTIMIZACIONES DE RENDIMIENTO === */
+/* === NUEVAS MEJORAS PARA ONDAS INTERACTIVAS Y PARTÍCULAS === */
 
 /* Prevenir layout shifts - MEJORADO */
 .profile-image,
@@ -52,6 +52,96 @@
   }
 }
 
+/* === NUEVO: ONDAS DE AUDIO INTERACTIVAS MEJORADAS === */
+.audio-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  width: 100%;
+  contain: layout style;
+  position: relative;
+}
+
+.wave-bar {
+  width: 4px;
+  background: var(--rich-gold);
+  border-radius: 2px;
+  transition: all 0.15s ease;
+  flex: 1;
+  margin: 0 1px;
+  transform-origin: center bottom;
+  will-change: transform, opacity;
+}
+
+/* Estados de las ondas cuando NO se reproduce */
+.audio-player-mini:not(.playing) .wave-bar {
+  animation: waveIdle 2s ease-in-out infinite;
+  opacity: 0.4;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0s; height: 8px; }
+.wave-bar:nth-child(2) { animation-delay: 0.2s; height: 12px; }
+.wave-bar:nth-child(3) { animation-delay: 0.4s; height: 16px; }
+.wave-bar:nth-child(4) { animation-delay: 0.6s; height: 20px; }
+.wave-bar:nth-child(5) { animation-delay: 0.8s; height: 16px; }
+.wave-bar:nth-child(6) { animation-delay: 1.0s; height: 12px; }
+.wave-bar:nth-child(7) { animation-delay: 1.2s; height: 8px; }
+.wave-bar:nth-child(8) { animation-delay: 1.4s; height: 6px; }
+
+/* Estados de las ondas cuando SÍ se reproduce */
+.audio-player-mini.playing .wave-bar {
+  animation: waveDance 0.8s ease-in-out infinite alternate;
+  opacity: 1;
+}
+
+.audio-player-mini.playing .wave-bar:nth-child(1) { animation-delay: 0s; }
+.audio-player-mini.playing .wave-bar:nth-child(2) { animation-delay: 0.1s; }
+.audio-player-mini.playing .wave-bar:nth-child(3) { animation-delay: 0.2s; }
+.audio-player-mini.playing .wave-bar:nth-child(4) { animation-delay: 0.3s; }
+.audio-player-mini.playing .wave-bar:nth-child(5) { animation-delay: 0.4s; }
+.audio-player-mini.playing .wave-bar:nth-child(6) { animation-delay: 0.5s; }
+.audio-player-mini.playing .wave-bar:nth-child(7) { animation-delay: 0.6s; }
+.audio-player-mini.playing .wave-bar:nth-child(8) { animation-delay: 0.7s; }
+
+@keyframes waveIdle {
+  0%, 100% { 
+    transform: scaleY(0.6);
+    opacity: 0.3;
+  }
+  50% { 
+    transform: scaleY(0.9);
+    opacity: 0.6;
+  }
+}
+
+@keyframes waveDance {
+  0% { 
+    transform: scaleY(0.3);
+    opacity: 0.4;
+  }
+  100% { 
+    transform: scaleY(1.8);
+    opacity: 1;
+  }
+}
+
+@keyframes wavePulse {
+  0%, 100% { opacity: 0.4; transform: scaleY(0.8); }
+  50% { opacity: 1; transform: scaleY(1.2); }
+}
+
+/* Efecto especial cuando la canción está en partes intensas */
+.audio-player-mini.playing .wave-bar.intense {
+  animation: waveIntense 0.3s ease-in-out infinite;
+  background: var(--vibrant-gold);
+}
+
+@keyframes waveIntense {
+  0%, 100% { transform: scaleY(1.5); opacity: 1; }
+  50% { transform: scaleY(2.2); opacity: 0.8; }
+}
+
 /* === NUEVO: INDICADOR DE CARGA === */
 .loading-progress {
   position: fixed;
@@ -63,6 +153,7 @@
   z-index: 9999;
   opacity: 0;
   transition: opacity 0.3s ease;
+  pointer-events: none;
 }
 
 .loading-progress.loading {
@@ -89,9 +180,13 @@
   50% { opacity: 1; }
 }
 
-/* === NUEVA SECCIÓN: TESTIMONIOS === */
+/* === NUEVAS SECCIONES: TESTIMONIOS E INTERACCIÓN === */
 .testimonials-section {
   background: linear-gradient(135deg, rgba(200, 162, 95, 0.03) 0%, transparent 50%);
+}
+
+.interaction-section {
+  background: linear-gradient(135deg, transparent 0%, rgba(200, 162, 95, 0.02) 50%);
 }
 
 .testimonials-grid {
@@ -185,182 +280,8 @@ img {
   loading: eager;
 }
 
-/* === MEJORAS DE ACCESIBILIDAD === */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
-  
-  .fade-in {
-    transition: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-  }
-}
-
-/* === FOCUS VISIBLE MEJORADO === */
-:focus-visible {
-  outline: 3px solid var(--rich-gold);
-  outline-offset: 3px;
-  border-radius: 4px;
-}
-
-.btn:focus-visible,
-.audio-play-btn:focus-visible,
-.rating-btn:focus-visible {
-  outline: 3px solid var(--rich-gold);
-  outline-offset: 2px;
-}
-
-/* === CONTRASTE ALTO === */
-@media (prefers-contrast: high) {
-  :root {
-    --primary-black: #000000;
-    --text-primary: #ffffff;
-    --rich-gold: #ffd700;
-    --border-gold: #ffd700;
-  }
-  
-  .btn-primary,
-  .btn-gold {
-    color: #000000 !important;
-  }
-}
-
-/* === NUEVO REPRODUCTOR DE AUDIO MINI - OPTIMIZADO === */
-.audio-player-mini {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0;
-  padding: 12px 16px;
-  background: rgba(200, 162, 95, 0.08);
-  border: 1px solid rgba(200, 162, 95, 0.2);
-  border-radius: 12px;
-  transition: all 0.3s ease;
-  contain: layout style;
-}
-
-.audio-player-mini:hover {
-  background: rgba(200, 162, 95, 0.12);
-  border-color: rgba(200, 162, 95, 0.4);
-}
-
-.audio-play-btn {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, var(--rich-gold), var(--vibrant-gold));
-  border: none;
-  border-radius: 50%;
-  color: var(--primary-black);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-  position: relative;
-  overflow: hidden;
-}
-
-.audio-play-btn:hover {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(200, 162, 95, 0.4);
-}
-
-.audio-play-btn:active {
-  transform: scale(0.95);
-}
-
-.audio-progress-container {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.audio-waveform {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 20px;
-  width: 100%;
-  contain: layout style;
-}
-
-.wave-bar {
-  width: 3px;
-  background: var(--rich-gold);
-  border-radius: 2px;
-  transition: all 0.3s ease;
-  animation: wavePulse 1.5s ease-in-out infinite;
-  flex: 1;
-  margin: 0 1px;
-}
-
-.wave-bar:nth-child(1) { animation-delay: 0s; height: 6px; }
-.wave-bar:nth-child(2) { animation-delay: 0.1s; height: 10px; }
-.wave-bar:nth-child(3) { animation-delay: 0.2s; height: 14px; }
-.wave-bar:nth-child(4) { animation-delay: 0.3s; height: 18px; }
-.wave-bar:nth-child(5) { animation-delay: 0.4s; height: 14px; }
-.wave-bar:nth-child(6) { animation-delay: 0.5s; height: 10px; }
-.wave-bar:nth-child(7) { animation-delay: 0.6s; height: 6px; }
-.wave-bar:nth-child(8) { animation-delay: 0.7s; height: 4px; }
-
-@keyframes wavePulse {
-  0%, 100% { opacity: 0.4; transform: scaleY(0.8); }
-  50% { opacity: 1; transform: scaleY(1.2); }
-}
-
-.audio-progress-bar {
-  width: 100%;
-  height: 4px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 2px;
-  overflow: hidden;
-  position: relative;
-}
-
-.audio-progress {
-  height: 100%;
-  background: linear-gradient(135deg, var(--rich-gold), var(--vibrant-gold));
-  border-radius: 2px;
-  width: 0%;
-  transition: width 0.1s linear;
-  will-change: width;
-}
-
-.audio-time {
-  color: var(--text-muted);
-  font-size: 0.8rem;
-  font-weight: var(--font-medium);
-  min-width: 40px;
-  text-align: center;
-  flex-shrink: 0;
-}
-
-/* Estados del reproductor */
-.audio-player-mini.playing .wave-bar {
-  animation-play-state: running;
-}
-
-.audio-player-mini:not(.playing) .wave-bar {
-  animation-play-state: paused;
-  opacity: 0.3;
-}
-
-.audio-player-mini.preproduction .audio-waveform {
-  opacity: 0.7;
-}
-
 /* === MANTENER TODO EL CÓDIGO EXISTENTE FUNCIONAL === */
-/* (Conservo todo tu código original aquí) */
+/* (Todo tu código original permanece intacto aquí) */
 
 :root {
   --primary-black: #000000;
@@ -1407,13 +1328,13 @@ footer {
   align-items: center;
   gap: var(--space-md);
   justify-content: center;
-  text-align: center; /* Añadido para centrar el texto */
+  text-align: center;
 }
 
 @media (min-width: 768px) {
   .footer-brand {
-    justify-content: center; /* Cambiado de flex-start a center */
-    text-align: center; /* Añadido para centrar el texto */
+    justify-content: center;
+    text-align: center;
   }
 }
 
@@ -1704,9 +1625,6 @@ footer {
     bottom: -8px;
   }
 
-  /* === MODIFICACIÓN: ELIMINADA LA TRANSFORMACIÓN A X === */
-  /* El botón de hamburguesa ya no se transforma en X cuando está activo */
-
   .hero {
     padding: 120px 0 var(--space-xl);
   }
@@ -1772,7 +1690,6 @@ footer {
     justify-content: center;
   }
 
-  /* MODIFICACIÓN DEEPSEEK - Alineación footer móvil */
   .footer-content {
     text-align: left;
   }
@@ -1789,7 +1706,6 @@ footer {
     padding-left: 20px;
   }
 
-  /* Responsive para reproductor de audio */
   .audio-player-mini {
     padding: 10px 12px;
     gap: 10px;
@@ -1861,16 +1777,52 @@ footer {
   }
 }
 
+/* MEJORAS DE ACCESIBILIDAD Y CONTRASTE */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .fade-in {
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  
+  .wave-bar {
+    animation: none !important;
+  }
+}
+
 :focus-visible {
-  outline: 2px solid var(--rich-gold);
+  outline: 3px solid var(--rich-gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.btn:focus-visible,
+.audio-play-btn:focus-visible,
+.rating-btn:focus-visible {
+  outline: 3px solid var(--rich-gold);
   outline-offset: 2px;
 }
 
-@media print {
-  .hero-visual,
-  .social-links,
-  .cta {
-    display: none;
+@media (prefers-contrast: high) {
+  :root {
+    --primary-black: #000000;
+    --text-primary: #ffffff;
+    --rich-gold: #ffd700;
+    --border-gold: #ffd700;
+  }
+  
+  .btn-primary,
+  .btn-gold {
+    color: #000000 !important;
   }
 }
 
@@ -1881,7 +1833,7 @@ footer {
   max-width: 100%;
 }
 
-/* MODIFICACIÓN DEEPSEEK - Flecha personalizada para selects */
+/* Flecha personalizada para selects */
 .form-group select {
   background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c8a25f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
   background-repeat: no-repeat;
@@ -1891,7 +1843,6 @@ footer {
   background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
-/* MODIFICACIÓN DEEPSEEK - Asegurar que los options tengan fondo oscuro */
 .form-group select option {
   background: var(--deep-black);
   color: var(--text-primary);
