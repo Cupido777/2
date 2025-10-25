@@ -1,4 +1,5 @@
-// stats-system.js - SISTEMA DE ESTADÍSTICAS DISCRETO - SIN DUPLICACIÓN
+// stats-system.js - SISTEMA DE ESTADÍSTICAS DISCRETO OPTIMIZADO
+
 class StatsSystem {
     constructor() {
         this.stats = this.loadStats();
@@ -17,29 +18,25 @@ class StatsSystem {
     loadStats() {
         try {
             const stored = localStorage.getItem('odam-stats');
-            return stored ? JSON.parse(stored) : {
-                visits: 0,
-                timeSpent: 0,
-                scrollDepth: 0,
-                clicks: 0,
-                lastVisit: null
-            };
+            if (stored) {
+                return JSON.parse(stored);
+            }
         } catch (e) {
-            return this.getDefaultStats();
+            console.error('Error cargando estadísticas:', e);
         }
+        return this.getDefaultStats();
     }
 
     loadRating() {
         try {
             const stored = localStorage.getItem('odam-rating');
-            return stored ? JSON.parse(stored) : {
-                likes: 0,
-                dislikes: 0,
-                userVote: null
-            };
+            if (stored) {
+                return JSON.parse(stored);
+            }
         } catch (e) {
-            return this.getDefaultRating();
+            console.error('Error cargando rating:', e);
         }
+        return this.getDefaultRating();
     }
 
     getDefaultStats() {
@@ -102,26 +99,61 @@ class StatsSystem {
 
     trackScroll() {
         let maxScroll = 0;
-        window.addEventListener('scroll', () => {
+        // Usar throttling para el evento scroll
+        let scrollTimeout;
+        const updateScrollDepth = () => {
             const scrollPercent = Math.round(
                 (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
             );
             if (scrollPercent > maxScroll) {
                 maxScroll = scrollPercent;
                 this.stats.scrollDepth = maxScroll;
-                this.saveStats();
+                // No guardamos continuamente, solo al final
+            }
+        };
+
+        window.addEventListener('scroll', () => {
+            if (!scrollTimeout) {
+                scrollTimeout = setTimeout(() => {
+                    updateScrollDepth();
+                    scrollTimeout = null;
+                }, 100);
             }
         }, { passive: true });
+
+        // Guardar la profundidad de scroll al descargar la página
+        window.addEventListener('beforeunload', () => {
+            this.saveStats();
+        });
     }
 
     trackClicks() {
+        // Usar delegación de eventos para mejor performance
         document.addEventListener('click', (e) => {
             // Ignorar clicks en elementos del sistema de estadísticas
             if (!e.target.closest('.stats-system-container')) {
                 this.stats.clicks++;
-                this.saveStats();
+                // No guardamos inmediatamente, usamos throttling
+                this.debouncedSaveStats();
             }
         }, { passive: true });
+    }
+
+    // Debounce para guardar estadísticas (evitar muchas escrituras)
+    debouncedSaveStats = this.debounce(() => {
+        this.saveStats();
+    }, 1000);
+
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
     }
 
     rate(voteType) {
@@ -168,6 +200,11 @@ class StatsSystem {
 
     createStatsContainer() {
         // === SOLO UN CONTENEDOR - SIN DUPLICACIÓN ===
+        const existingContainer = document.querySelector('.stats-system-container');
+        if (existingContainer) {
+            existingContainer.remove();
+        }
+
         const statsHTML = `
             <div class="stats-system-container">
                 <div class="stats-title">Interacción de la Comunidad</div>
@@ -210,15 +247,21 @@ class StatsSystem {
         `;
 
         // === INSERTAR SOLO DEBAJO DE LA SECCIÓN DE CONTACTO ===
-        const contactSection = document.querySelector('.contact-section .contact-content');
+        const contactSection = document.querySelector('.contact-section');
         if (contactSection) {
-            contactSection.insertAdjacentHTML('afterend', statsHTML);
+            contactSection.insertAdjacentHTML('beforeend', statsHTML);
         }
 
         this.createFeedbackModal();
     }
 
     createFeedbackModal() {
+        // Eliminar modal existente si hay
+        const existingModal = document.getElementById('feedback-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+
         const modalHTML = `
             <div id="feedback-modal" class="feedback-modal">
                 <div class="feedback-modal-content">
