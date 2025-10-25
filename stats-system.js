@@ -1,5 +1,4 @@
-// stats-system.js - SISTEMA DE ESTADÍSTICAS DISCRETO OPTIMIZADO
-
+// stats-system.js - SISTEMA DE ESTADÍSTICAS DISCRETO MEJORADO
 class StatsSystem {
     constructor() {
         this.stats = this.loadStats();
@@ -18,25 +17,32 @@ class StatsSystem {
     loadStats() {
         try {
             const stored = localStorage.getItem('odam-stats');
-            if (stored) {
-                return JSON.parse(stored);
-            }
+            return stored ? JSON.parse(stored) : {
+                visits: 0,
+                timeSpent: 0,
+                scrollDepth: 0,
+                clicks: 0,
+                lastVisit: null,
+                projectsViewed: 0,
+                servicesExplored: 0
+            };
         } catch (e) {
-            console.error('Error cargando estadísticas:', e);
+            return this.getDefaultStats();
         }
-        return this.getDefaultStats();
     }
 
     loadRating() {
         try {
             const stored = localStorage.getItem('odam-rating');
-            if (stored) {
-                return JSON.parse(stored);
-            }
+            return stored ? JSON.parse(stored) : {
+                likes: 0,
+                dislikes: 0,
+                userVote: null,
+                totalVotes: 0
+            };
         } catch (e) {
-            console.error('Error cargando rating:', e);
+            return this.getDefaultRating();
         }
-        return this.getDefaultRating();
     }
 
     getDefaultStats() {
@@ -45,7 +51,9 @@ class StatsSystem {
             timeSpent: 0, 
             scrollDepth: 0, 
             clicks: 0,
-            lastVisit: null
+            lastVisit: null,
+            projectsViewed: 0,
+            servicesExplored: 0
         };
     }
 
@@ -53,7 +61,8 @@ class StatsSystem {
         return { 
             likes: 0, 
             dislikes: 0, 
-            userVote: null 
+            userVote: null,
+            totalVotes: 0
         };
     }
 
@@ -78,6 +87,8 @@ class StatsSystem {
         this.trackTime();
         this.trackScroll();
         this.trackClicks();
+        this.trackProjects();
+        this.trackServices();
     }
 
     trackVisit() {
@@ -99,61 +110,62 @@ class StatsSystem {
 
     trackScroll() {
         let maxScroll = 0;
-        // Usar throttling para el evento scroll
-        let scrollTimeout;
-        const updateScrollDepth = () => {
+        window.addEventListener('scroll', () => {
             const scrollPercent = Math.round(
                 (window.scrollY / (document.documentElement.scrollHeight - window.innerHeight)) * 100
             );
             if (scrollPercent > maxScroll) {
                 maxScroll = scrollPercent;
                 this.stats.scrollDepth = maxScroll;
-                // No guardamos continuamente, solo al final
-            }
-        };
-
-        window.addEventListener('scroll', () => {
-            if (!scrollTimeout) {
-                scrollTimeout = setTimeout(() => {
-                    updateScrollDepth();
-                    scrollTimeout = null;
-                }, 100);
+                this.saveStats();
             }
         }, { passive: true });
-
-        // Guardar la profundidad de scroll al descargar la página
-        window.addEventListener('beforeunload', () => {
-            this.saveStats();
-        });
     }
 
     trackClicks() {
-        // Usar delegación de eventos para mejor performance
         document.addEventListener('click', (e) => {
             // Ignorar clicks en elementos del sistema de estadísticas
             if (!e.target.closest('.stats-system-container')) {
                 this.stats.clicks++;
-                // No guardamos inmediatamente, usamos throttling
-                this.debouncedSaveStats();
+                this.saveStats();
             }
         }, { passive: true });
     }
 
-    // Debounce para guardar estadísticas (evitar muchas escrituras)
-    debouncedSaveStats = this.debounce(() => {
-        this.saveStats();
-    }, 1000);
+    trackProjects() {
+        // Track cuando los usuarios ven proyectos
+        const projectSection = document.getElementById('proyectos');
+        if (projectSection) {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        this.stats.projectsViewed++;
+                        this.saveStats();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.5 });
+            
+            observer.observe(projectSection);
+        }
+    }
 
-    debounce(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
-                clearTimeout(timeout);
-                func(...args);
-            };
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-        };
+    trackServices() {
+        // Track cuando los usuarios exploran servicios
+        const serviceItems = document.querySelectorAll('.service-accordion-item');
+        serviceItems.forEach((item, index) => {
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        this.stats.servicesExplored++;
+                        this.saveStats();
+                        observer.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.7 });
+            
+            observer.observe(item);
+        });
     }
 
     rate(voteType) {
@@ -177,34 +189,29 @@ class StatsSystem {
                 setTimeout(() => this.openFeedbackModal(), 500);
             }
         }
+        
+        this.rating.totalVotes = this.rating.likes + this.rating.dislikes;
         this.saveRating();
         this.updateRatingDisplay();
     }
 
     getRestrictedWords() {
         return [
-            // === LISTA DE PALABRAS RESTRINGIDAS ===
             // Lenguaje vulgar u obsceno
-            'palabrota1', 'palabrota2', 'insulto1', 'insulto2', 'groseria1', 'groseria2',
+            'palabrota', 'insulto', 'groseria', 'vulgar', 'obsceno',
             // Discriminación
-            'racista1', 'sexista1', 'homofobico1', 'discriminatorio1',
+            'racista', 'sexista', 'homofobico', 'discriminatorio',
             // Violencia
-            'amenaza1', 'violencia1', 'odio1', 'daño1',
+            'amenaza', 'violencia', 'odio', 'daño', 'atacar',
             // Acoso
-            'acoso1', 'difamacion1', 'humillacion1', 'abusivo1',
+            'acoso', 'difamacion', 'humillacion', 'abusivo',
             // Spam
-            'estafa', 'phishing', 'correo no deseado', 'spam1'
-            // AGREGA AQUÍ TU LISTA COMPLETA DE PALABRAS RESTRINGIDAS
+            'estafa', 'phishing', 'correo no deseado', 'spam',
+            'promoción', 'marketing', 'publicidad'
         ];
     }
 
     createStatsContainer() {
-        // === SOLO UN CONTENEDOR - SIN DUPLICACIÓN ===
-        const existingContainer = document.querySelector('.stats-system-container');
-        if (existingContainer) {
-            existingContainer.remove();
-        }
-
         const statsHTML = `
             <div class="stats-system-container">
                 <div class="stats-title">Interacción de la Comunidad</div>
@@ -220,6 +227,10 @@ class StatsSystem {
                     <div class="stat-item" onclick="window.statsSystem.handleStatClick('engagement')">
                         <span class="stat-number" id="stat-engagement">${this.getEngagementScore()}%</span>
                         <span class="stat-label">Compromiso</span>
+                    </div>
+                    <div class="stat-item" onclick="window.statsSystem.handleStatClick('projects')">
+                        <span class="stat-number" id="stat-projects">${this.stats.projectsViewed}</span>
+                        <span class="stat-label">Proyectos Vistos</span>
                     </div>
                 </div>
                 <div class="rating-section">
@@ -246,22 +257,16 @@ class StatsSystem {
             </div>
         `;
 
-        // === INSERTAR SOLO DEBAJO DE LA SECCIÓN DE CONTACTO ===
-        const contactSection = document.querySelector('.contact-section');
-        if (contactSection) {
-            contactSection.insertAdjacentHTML('beforeend', statsHTML);
+        // Insertar en la sección de interacción
+        const interactionSection = document.getElementById('interaccion');
+        if (interactionSection) {
+            interactionSection.insertAdjacentHTML('beforeend', statsHTML);
         }
 
         this.createFeedbackModal();
     }
 
     createFeedbackModal() {
-        // Eliminar modal existente si hay
-        const existingModal = document.getElementById('feedback-modal');
-        if (existingModal) {
-            existingModal.remove();
-        }
-
         const modalHTML = `
             <div id="feedback-modal" class="feedback-modal">
                 <div class="feedback-modal-content">
@@ -412,9 +417,14 @@ class StatsSystem {
             feedbacks.push({
                 comment: comment,
                 timestamp: new Date().toISOString(),
-                type: 'feedback'
+                type: 'feedback',
+                rating: this.rating.userVote
             });
             localStorage.setItem('odam-feedback', JSON.stringify(feedbacks));
+            
+            // Track de feedback enviado
+            this.stats.clicks += 5; // Bonus por feedback
+            this.saveStats();
         } catch (e) {
             console.error('Error guardando feedback:', e);
         }
@@ -424,11 +434,15 @@ class StatsSystem {
         const modal = document.getElementById('feedback-modal');
         const textarea = document.getElementById('feedback-comment');
         
-        modal.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        
-        // Enfocar el textarea después de la animación
-        setTimeout(() => textarea.focus(), 300);
+        if (modal) {
+            modal.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Enfocar el textarea después de la animación
+            setTimeout(() => {
+                if (textarea) textarea.focus();
+            }, 300);
+        }
     }
 
     closeFeedbackModal() {
@@ -437,31 +451,37 @@ class StatsSystem {
         const errorElement = document.getElementById('feedback-error');
         const successElement = document.getElementById('feedback-success');
         
-        modal.classList.remove('active');
-        document.body.style.overflow = 'auto';
+        if (modal) {
+            modal.classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
         
         // Resetear formulario
-        form.reset();
-        document.getElementById('char-count').textContent = '0';
-        errorElement.style.display = 'none';
-        successElement.style.display = 'none';
+        if (form) {
+            form.reset();
+            const charCount = document.getElementById('char-count');
+            if (charCount) charCount.textContent = '0';
+        }
+        
+        if (errorElement) errorElement.style.display = 'none';
+        if (successElement) successElement.style.display = 'none';
     }
 
     updateDisplay() {
-        // Actualizar números en tiempo real si es necesario
         this.updateStatsDisplay();
         this.updateRatingDisplay();
     }
 
     updateStatsDisplay() {
-        // Actualizar solo los números, no el título
         const visitsElement = document.getElementById('stat-visits');
         const timeElement = document.getElementById('stat-time');
         const engagementElement = document.getElementById('stat-engagement');
+        const projectsElement = document.getElementById('stat-projects');
 
         if (visitsElement) visitsElement.textContent = this.stats.visits;
         if (timeElement) timeElement.textContent = Math.round(this.stats.timeSpent / 60000) + 'm';
         if (engagementElement) engagementElement.textContent = this.getEngagementScore() + '%';
+        if (projectsElement) projectsElement.textContent = this.stats.projectsViewed;
     }
 
     updateRatingDisplay() {
@@ -485,32 +505,42 @@ class StatsSystem {
     getEngagementScore() {
         const scrollScore = this.stats.scrollDepth;
         const timeScore = Math.min(Math.round(this.stats.timeSpent / 60000) * 2, 100);
-        const clickScore = Math.min(this.stats.clicks * 5, 100);
+        const clickScore = Math.min(this.stats.clicks * 3, 100);
+        const projectScore = Math.min(this.stats.projectsViewed * 10, 100);
+        const serviceScore = Math.min(this.stats.servicesExplored * 15, 100);
         
-        return Math.round((scrollScore + timeScore + clickScore) / 3);
+        return Math.round((scrollScore + timeScore + clickScore + projectScore + serviceScore) / 5);
     }
 
     getRatingText() {
         const total = this.rating.likes + this.rating.dislikes;
         if (total === 0) return 'Sé el primero en valorar';
         const percentage = Math.round((this.rating.likes / total) * 100);
-        return `${percentage}% de las personas les gusta esta página`;
+        return `${percentage}% de las personas les gusta esta página (${total} votos)`;
     }
 
     handleStatClick(statType) {
         // Efecto visual al hacer clic en estadísticas
-        console.log(`Estadística clickeada: ${statType}`);
+        const statItem = event.currentTarget;
+        statItem.style.transform = 'scale(0.95)';
+        setTimeout(() => {
+            statItem.style.transform = 'scale(1)';
+        }, 150);
         
-        // Podemos agregar más funcionalidades aquí
+        // Información adicional según el tipo de estadística
         switch(statType) {
             case 'visits':
-                alert(`Has visitado esta página ${this.stats.visits} veces`);
+                console.log(`Has visitado esta página ${this.stats.visits} veces`);
                 break;
             case 'time':
-                alert(`Has pasado ${Math.round(this.stats.timeSpent / 60000)} minutos en esta página`);
+                const minutes = Math.round(this.stats.timeSpent / 60000);
+                console.log(`Has pasado ${minutes} minutos en esta página`);
                 break;
             case 'engagement':
-                alert(`Tu nivel de compromiso es del ${this.getEngagementScore()}%`);
+                console.log(`Tu nivel de compromiso es del ${this.getEngagementScore()}%`);
+                break;
+            case 'projects':
+                console.log(`Has visto ${this.stats.projectsViewed} proyectos`);
                 break;
         }
     }
@@ -528,6 +558,14 @@ class StatsSystem {
         this.stats = this.getDefaultStats();
         this.saveStats();
         this.updateDisplay();
+    }
+
+    exportData() {
+        return {
+            stats: this.getStats(),
+            rating: this.getRating(),
+            exportDate: new Date().toISOString()
+        };
     }
 }
 
