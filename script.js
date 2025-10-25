@@ -107,6 +107,110 @@ class LoadingSystem {
   }
 }
 
+// === NUEVO: SISTEMA DE ONDAS INTERACTIVAS PARA AUDIO ===
+class WaveformSystem {
+  constructor() {
+    this.audioAnalysers = new Map();
+    this.animationFrames = new Map();
+  }
+
+  initAudioWaveform(audioId, waveformId) {
+    const audio = document.getElementById(audioId);
+    const waveform = document.getElementById(waveformId);
+    
+    if (!audio || !waveform) return;
+
+    // Crear contexto de audio para análisis
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaElementSource(audio);
+    
+    source.connect(analyser);
+    analyser.connect(audioContext.destination);
+    
+    analyser.fftSize = 64;
+    const bufferLength = analyser.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    
+    this.audioAnalysers.set(audioId, { analyser, dataArray, waveform });
+    
+    // Configurar evento de reproducción
+    audio.addEventListener('play', () => {
+      this.startWaveformAnimation(audioId);
+    });
+    
+    audio.addEventListener('pause', () => {
+      this.stopWaveformAnimation(audioId);
+    });
+    
+    audio.addEventListener('ended', () => {
+      this.stopWaveformAnimation(audioId);
+    });
+  }
+
+  startWaveformAnimation(audioId) {
+    const audioData = this.audioAnalysers.get(audioId);
+    if (!audioData || this.animationFrames.has(audioId)) return;
+
+    const animate = () => {
+      if (!this.animationFrames.has(audioId)) return;
+      
+      audioData.analyser.getByteFrequencyData(audioData.dataArray);
+      this.updateWaveformBars(audioData);
+      
+      this.animationFrames.set(audioId, requestAnimationFrame(animate));
+    };
+    
+    this.animationFrames.set(audioId, requestAnimationFrame(animate));
+  }
+
+  stopWaveformAnimation(audioId) {
+    const frameId = this.animationFrames.get(audioId);
+    if (frameId) {
+      cancelAnimationFrame(frameId);
+      this.animationFrames.delete(audioId);
+    }
+    
+    // Resetear ondas a estado inactivo
+    const audioData = this.audioAnalysers.get(audioId);
+    if (audioData) {
+      this.resetWaveformBars(audioData);
+    }
+  }
+
+  updateWaveformBars(audioData) {
+    const { dataArray, waveform } = audioData;
+    const bars = waveform.querySelectorAll('.wave-bar');
+    
+    bars.forEach((bar, index) => {
+      const value = dataArray[index] || 0;
+      const height = 4 + (value / 255) * 20;
+      const opacity = 0.4 + (value / 255) * 0.6;
+      
+      bar.style.height = `${height}px`;
+      bar.style.opacity = opacity;
+      
+      // Efecto especial para valores altos
+      if (value > 200) {
+        bar.classList.add('intense');
+      } else {
+        bar.classList.remove('intense');
+      }
+    });
+  }
+
+  resetWaveformBars(audioData) {
+    const { waveform } = audioData;
+    const bars = waveform.querySelectorAll('.wave-bar');
+    
+    bars.forEach((bar, index) => {
+      bar.style.height = '';
+      bar.style.opacity = '';
+      bar.classList.remove('intense');
+    });
+  }
+}
+
 // === FUNCIÓN REUTILIZABLE PARA TARJETAS DE AUDIO OPTIMIZADA ===
 function initAudioCard(cardId, audioId) {
   const projectCard = document.getElementById(cardId);
@@ -118,6 +222,11 @@ function initAudioCard(cardId, audioId) {
     const playBtn = projectCard.querySelector('.audio-play-btn');
     const progressBar = projectCard.querySelector('.audio-progress');
     const audioTime = projectCard.querySelector('.audio-time');
+    const waveformId = `waveform-${cardId.replace('project-', '')}`;
+
+    // Inicializar sistema de ondas
+    const waveformSystem = new WaveformSystem();
+    waveformSystem.initAudioWaveform(audioId, waveformId);
 
     // Función para formatear el tiempo
     function formatTime(seconds) {
@@ -141,9 +250,11 @@ function initAudioCard(cardId, audioId) {
       if (audio.paused) {
         playBtn.innerHTML = '<i class="fas fa-play" aria-hidden="true"></i>';
         audioPlayer.classList.remove('playing');
+        waveformSystem.stopWaveformAnimation(audioId);
       } else {
         playBtn.innerHTML = '<i class="fas fa-pause" aria-hidden="true"></i>';
         audioPlayer.classList.add('playing');
+        waveformSystem.startWaveformAnimation(audioId);
       }
     }
 
@@ -162,6 +273,9 @@ function initAudioCard(cardId, audioId) {
           if (otherPlayer) {
             otherPlayer.classList.remove('playing');
             otherPlayer.querySelector('.audio-play-btn').innerHTML = '<i class="fas fa-play" aria-hidden="true"></i>';
+            // Detener ondas de otros audios
+            const otherAudioId = otherAudio.id;
+            waveformSystem.stopWaveformAnimation(otherAudioId);
           }
         }
       });
@@ -211,6 +325,156 @@ function initAudioCard(cardId, audioId) {
     const projectBadge = projectCard.querySelector('.project-badge');
     if (projectBadge && projectBadge.textContent.includes('PRODUCCIÓN')) {
       audioPlayer.classList.add('preproduction');
+    }
+  }
+}
+
+// === NUEVO: SISTEMA DE PARTÍCULAS INTERACTIVAS ===
+class InteractiveParticles {
+  constructor() {
+    this.particlesInstance = null;
+    this.isMobile = window.innerWidth < 768;
+  }
+
+  init() {
+    if (this.isMobile || typeof particlesJS === 'undefined') return;
+
+    this.particlesInstance = particlesJS('particles-js', {
+      particles: {
+        number: { 
+          value: 35,
+          density: { 
+            enable: true, 
+            value_area: 800 
+          } 
+        },
+        color: { value: "#c8a25f" },
+        shape: { type: "circle" },
+        opacity: { 
+          value: 0.25,
+          random: true 
+        },
+        size: { 
+          value: 3,
+          random: true 
+        },
+        line_linked: {
+          enable: true,
+          distance: 150,
+          color: "#c8a25f",
+          opacity: 0.2,
+          width: 1
+        },
+        move: {
+          enable: true,
+          speed: 2,
+          direction: "none",
+          random: true,
+          straight: false,
+          out_mode: "out",
+          bounce: false
+        }
+      },
+      interactivity: {
+        detect_on: "canvas",
+        events: {
+          onhover: { 
+            enable: true, 
+            mode: "grab" 
+          },
+          onclick: { 
+            enable: true, 
+            mode: "push" 
+          },
+          onresize: {
+            enable: true,
+            density_auto: true,
+            density_area: 800
+          }
+        },
+        modes: {
+          grab: {
+            distance: 140,
+            line_linked: {
+              opacity: 0.3
+            }
+          },
+          push: {
+            particles_nb: 4
+          }
+        }
+      },
+      retina_detect: true
+    });
+
+    // Agregar soporte táctil para móviles
+    this.addTouchSupport();
+  }
+
+  addTouchSupport() {
+    const canvas = document.querySelector('#particles-js canvas');
+    if (!canvas) return;
+
+    let isTouching = false;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      isTouching = true;
+      const touch = e.touches[0];
+      lastTouchX = touch.clientX;
+      lastTouchY = touch.clientY;
+      
+      // Simular click para efecto de partículas
+      this.simulateParticleClick(touch.clientX, touch.clientY);
+    }, { passive: false });
+
+    canvas.addEventListener('touchmove', (e) => {
+      if (!isTouching) return;
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - lastTouchX;
+      const deltaY = touch.clientY - lastTouchY;
+      
+      // Simular hover para efecto de arrastre
+      this.simulateParticleHover(touch.clientX, touch.clientY);
+      
+      lastTouchX = touch.clientX;
+      lastTouchY = touch.clientY;
+    }, { passive: false });
+
+    canvas.addEventListener('touchend', () => {
+      isTouching = false;
+    });
+  }
+
+  simulateParticleClick(x, y) {
+    // Disparar evento de click en las partículas
+    const event = new MouseEvent('click', {
+      clientX: x,
+      clientY: y,
+      bubbles: true
+    });
+    
+    const canvas = document.querySelector('#particles-js canvas');
+    if (canvas) {
+      canvas.dispatchEvent(event);
+    }
+  }
+
+  simulateParticleHover(x, y) {
+    // Disparar evento de hover/mousemove en las partículas
+    const event = new MouseEvent('mousemove', {
+      clientX: x,
+      clientY: y,
+      bubbles: true
+    });
+    
+    const canvas = document.querySelector('#particles-js canvas');
+    if (canvas) {
+      canvas.dispatchEvent(event);
     }
   }
 }
@@ -377,6 +641,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const animationSystem = new AnimationSystem();
   animationSystem.init();
 
+  // Sistema de partículas interactivas
+  const particlesSystem = new InteractiveParticles();
+  particlesSystem.init();
+
   // Optimizar event listeners
   optimizeEventListeners();
 
@@ -448,66 +716,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // 3. Optimización partículas para móviles (mejorado)
-  if (typeof particlesJS !== 'undefined') {
-    const isMobile = window.innerWidth < 768;
-    if (!isMobile) { // Solo cargar partículas en desktop
-      particlesJS('particles-js', {
-        particles: {
-          number: { 
-            value: 25, // Reducido para mejor performance
-            density: { 
-              enable: true, 
-              value_area: 600 // Área más pequeña
-            } 
-          },
-          color: { value: "#c8a25f" },
-          shape: { type: "circle" },
-          opacity: { 
-            value: 0.25, // Más transparente
-            random: true 
-          },
-          size: { 
-            value: 2.5, // Más pequeño
-            random: true 
-          },
-          line_linked: {
-            enable: true,
-            distance: 120, // Distancia reducida
-            color: "#c8a25f",
-            opacity: 0.15, // Más transparente
-            width: 0.8 // Más delgado
-          },
-          move: {
-            enable: true,
-            speed: 1.5, // Más lento
-            direction: "none",
-            random: true,
-            straight: false,
-            out_mode: "out",
-            bounce: false
-          }
-        },
-        interactivity: {
-          detect_on: "canvas",
-          events: {
-            onhover: { 
-              enable: true, 
-              mode: "grab" 
-            },
-            onclick: { 
-              enable: true, 
-              mode: "push" 
-            },
-            resize: true
-          }
-        },
-        retina_detect: true
-      });
-    }
-  }
-
-  // 4. Header scroll effect (optimizado con throttling avanzado)
+  // 3. Header scroll effect (optimizado con throttling avanzado)
   let lastScroll = 0;
   let ticking = false;
   const header = document.querySelector('header');
@@ -541,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function() {
   
   window.addEventListener('scroll', onScroll, { passive: true });
 
-  // 5. Prefers reduced motion
+  // 4. Prefers reduced motion
   const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   if(prefersReduced){
     document.querySelectorAll('.fade-in').forEach(el => {
@@ -808,8 +1017,6 @@ Este mensaje fue enviado desde el formulario de contacto de ODAM Producción Mus
     initAudioCard('project-renovados-en-tu-voluntad', 'audio-renovados-en-tu-voluntad');
     initAudioCard('project-en-ti-confio-senor', 'audio-en-ti-confio-senor');
     initAudioCard('project-el-diezmo-es-del-senor-version-bachata', 'audio-el-diezmo-es-del-senor-version-bachata');
-    initAudioCard('project-jonas-y-el-gran-pez', 'audio-jonas-y-el-gran-pez');
-    initAudioCard('project-el-hijo-de-manoa', 'audio-el-hijo-de-manoa');
   }, 500);
 
   // ===== NUEVO: OPTIMIZACIONES PARA MÓVILES =====
@@ -818,9 +1025,6 @@ Este mensaje fue enviado desde el formulario de contacto de ODAM Producción Mus
       // Reducir animaciones en móviles
       document.documentElement.style.setProperty('--space-xxl', '60px');
       document.documentElement.style.setProperty('--space-xl', '40px');
-      
-      // Deshabilitar algunas animaciones pesadas
-      const heavyAnimations = document.querySelectorAll('.service-accordion-header::before');
     }
   }
 
