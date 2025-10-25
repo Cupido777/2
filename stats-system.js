@@ -24,7 +24,8 @@ class StatsSystem {
                 clicks: 0,
                 lastVisit: null,
                 projectsViewed: 0,
-                servicesExplored: 0
+                servicesExplored: 0,
+                audioPlays: 0
             };
         } catch (e) {
             return this.getDefaultStats();
@@ -53,7 +54,8 @@ class StatsSystem {
             clicks: 0,
             lastVisit: null,
             projectsViewed: 0,
-            servicesExplored: 0
+            servicesExplored: 0,
+            audioPlays: 0
         };
     }
 
@@ -89,6 +91,7 @@ class StatsSystem {
         this.trackClicks();
         this.trackProjects();
         this.trackServices();
+        this.trackAudioPlays();
     }
 
     trackVisit() {
@@ -124,7 +127,6 @@ class StatsSystem {
 
     trackClicks() {
         document.addEventListener('click', (e) => {
-            // Ignorar clicks en elementos del sistema de estadísticas
             if (!e.target.closest('.stats-system-container')) {
                 this.stats.clicks++;
                 this.saveStats();
@@ -133,7 +135,6 @@ class StatsSystem {
     }
 
     trackProjects() {
-        // Track cuando los usuarios ven proyectos
         const projectSection = document.getElementById('proyectos');
         if (projectSection) {
             const observer = new IntersectionObserver((entries) => {
@@ -151,7 +152,6 @@ class StatsSystem {
     }
 
     trackServices() {
-        // Track cuando los usuarios exploran servicios
         const serviceItems = document.querySelectorAll('.service-accordion-item');
         serviceItems.forEach((item, index) => {
             const observer = new IntersectionObserver((entries) => {
@@ -168,23 +168,34 @@ class StatsSystem {
         });
     }
 
+    trackAudioPlays() {
+        // Escuchar eventos de reproducción de audio
+        document.addEventListener('audioPlay', () => {
+            this.stats.audioPlays++;
+            this.saveStats();
+            this.updateDisplay();
+        });
+    }
+
+    incrementAudioPlays() {
+        this.stats.audioPlays++;
+        this.saveStats();
+        this.updateDisplay();
+    }
+
     rate(voteType) {
         if (this.rating.userVote === voteType) {
-            // Quitar voto si es el mismo
             if (voteType === 'like') this.rating.likes--;
             else this.rating.dislikes--;
             this.rating.userVote = null;
         } else {
-            // Remover voto anterior si existe
             if (this.rating.userVote === 'like') this.rating.likes--;
             else if (this.rating.userVote === 'dislike') this.rating.dislikes--;
             
-            // Agregar nuevo voto
             if (voteType === 'like') this.rating.likes++;
             else this.rating.dislikes++;
             this.rating.userVote = voteType;
 
-            // Mostrar modal si es dislike
             if (voteType === 'dislike') {
                 setTimeout(() => this.openFeedbackModal(), 500);
             }
@@ -197,15 +208,10 @@ class StatsSystem {
 
     getRestrictedWords() {
         return [
-            // Lenguaje vulgar u obsceno
             'palabrota', 'insulto', 'groseria', 'vulgar', 'obsceno',
-            // Discriminación
             'racista', 'sexista', 'homofobico', 'discriminatorio',
-            // Violencia
             'amenaza', 'violencia', 'odio', 'daño', 'atacar',
-            // Acoso
             'acoso', 'difamacion', 'humillacion', 'abusivo',
-            // Spam
             'estafa', 'phishing', 'correo no deseado', 'spam',
             'promoción', 'marketing', 'publicidad'
         ];
@@ -229,7 +235,7 @@ class StatsSystem {
                         <span class="stat-label">Compromiso</span>
                     </div>
                     <div class="stat-item" onclick="window.statsSystem.handleStatClick('projects')">
-                        <span class="stat-number" id="stat-projects">${this.stats.projectsViewed}</span>
+                        <span class="stat-number" id="stat-projects">${this.stats.projectsViewed + this.stats.audioPlays}</span>
                         <span class="stat-label">Proyectos Vistos</span>
                     </div>
                 </div>
@@ -257,7 +263,6 @@ class StatsSystem {
             </div>
         `;
 
-        // Insertar en la sección de interacción
         const interactionSection = document.getElementById('interaccion');
         if (interactionSection) {
             interactionSection.insertAdjacentHTML('beforeend', statsHTML);
@@ -317,12 +322,10 @@ class StatsSystem {
         const textarea = document.getElementById('feedback-comment');
         const charCount = document.getElementById('char-count');
 
-        // Contador de caracteres
         textarea.addEventListener('input', (e) => {
             charCount.textContent = e.target.value.length;
         });
 
-        // Cerrar modal
         closeBtns.forEach(btn => {
             btn.addEventListener('click', () => this.closeFeedbackModal());
         });
@@ -333,13 +336,11 @@ class StatsSystem {
             }
         });
 
-        // Enviar formulario
         form.addEventListener('submit', (e) => {
             e.preventDefault();
             this.submitFeedback();
         });
 
-        // Cerrar con ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && modal.classList.contains('active')) {
                 this.closeFeedbackModal();
@@ -350,7 +351,6 @@ class StatsSystem {
     validateComment(comment) {
         const commentLower = comment.toLowerCase();
         
-        // Verificar palabras restringidas
         const hasRestrictedWord = this.restrictedWords.some(word => 
             commentLower.includes(word.toLowerCase())
         );
@@ -362,7 +362,6 @@ class StatsSystem {
             };
         }
 
-        // Verificar longitud mínima
         if (comment.trim().length < 10) {
             return {
                 isValid: false,
@@ -370,7 +369,6 @@ class StatsSystem {
             };
         }
 
-        // Verificar contenido solo de espacios
         if (!comment.replace(/\s/g, '').length) {
             return {
                 isValid: false,
@@ -386,11 +384,9 @@ class StatsSystem {
         const errorElement = document.getElementById('feedback-error');
         const successElement = document.getElementById('feedback-success');
 
-        // Ocultar mensajes anteriores
         errorElement.style.display = 'none';
         successElement.style.display = 'none';
 
-        // Validar comentario
         const validation = this.validateComment(comment);
         if (!validation.isValid) {
             errorElement.textContent = validation.message;
@@ -398,13 +394,10 @@ class StatsSystem {
             return;
         }
 
-        // Guardar comentario
         this.saveFeedback(comment);
         
-        // Mostrar éxito
         successElement.style.display = 'block';
         
-        // Cerrar modal después de 2 segundos
         setTimeout(() => {
             this.closeFeedbackModal();
             successElement.style.display = 'none';
@@ -422,8 +415,7 @@ class StatsSystem {
             });
             localStorage.setItem('odam-feedback', JSON.stringify(feedbacks));
             
-            // Track de feedback enviado
-            this.stats.clicks += 5; // Bonus por feedback
+            this.stats.clicks += 5;
             this.saveStats();
         } catch (e) {
             console.error('Error guardando feedback:', e);
@@ -438,7 +430,6 @@ class StatsSystem {
             modal.classList.add('active');
             document.body.style.overflow = 'hidden';
             
-            // Enfocar el textarea después de la animación
             setTimeout(() => {
                 if (textarea) textarea.focus();
             }, 300);
@@ -456,7 +447,6 @@ class StatsSystem {
             document.body.style.overflow = 'auto';
         }
         
-        // Resetear formulario
         if (form) {
             form.reset();
             const charCount = document.getElementById('char-count');
@@ -481,7 +471,7 @@ class StatsSystem {
         if (visitsElement) visitsElement.textContent = this.stats.visits;
         if (timeElement) timeElement.textContent = Math.round(this.stats.timeSpent / 60000) + 'm';
         if (engagementElement) engagementElement.textContent = this.getEngagementScore() + '%';
-        if (projectsElement) projectsElement.textContent = this.stats.projectsViewed;
+        if (projectsElement) projectsElement.textContent = this.stats.projectsViewed + this.stats.audioPlays;
     }
 
     updateRatingDisplay() {
@@ -506,10 +496,11 @@ class StatsSystem {
         const scrollScore = this.stats.scrollDepth;
         const timeScore = Math.min(Math.round(this.stats.timeSpent / 60000) * 2, 100);
         const clickScore = Math.min(this.stats.clicks * 3, 100);
-        const projectScore = Math.min(this.stats.projectsViewed * 10, 100);
+        const projectScore = Math.min((this.stats.projectsViewed + this.stats.audioPlays) * 10, 100);
         const serviceScore = Math.min(this.stats.servicesExplored * 15, 100);
         
-        return Math.round((scrollScore + timeScore + clickScore + projectScore + serviceScore) / 5);
+        const totalScore = (scrollScore + timeScore + clickScore + projectScore + serviceScore) / 5;
+        return Math.round(Math.max(0, Math.min(100, totalScore)));
     }
 
     getRatingText() {
@@ -520,14 +511,20 @@ class StatsSystem {
     }
 
     handleStatClick(statType) {
-        // Efecto visual al hacer clic en estadísticas
         const statItem = event.currentTarget;
         statItem.style.transform = 'scale(0.95)';
         setTimeout(() => {
             statItem.style.transform = 'scale(1)';
         }, 150);
         
-        // Información adicional según el tipo de estadística
+        if (statType === 'projects') {
+            // Redirigir a la sección de proyectos
+            const proyectosSection = document.getElementById('proyectos');
+            if (proyectosSection) {
+                proyectosSection.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
         switch(statType) {
             case 'visits':
                 console.log(`Has visitado esta página ${this.stats.visits} veces`);
@@ -540,12 +537,11 @@ class StatsSystem {
                 console.log(`Tu nivel de compromiso es del ${this.getEngagementScore()}%`);
                 break;
             case 'projects':
-                console.log(`Has visto ${this.stats.projectsViewed} proyectos`);
+                console.log(`Has visto ${this.stats.projectsViewed} proyectos y reproducido ${this.stats.audioPlays} audios`);
                 break;
         }
     }
 
-    // Métodos públicos para acceso externo
     getStats() {
         return { ...this.stats };
     }
@@ -569,12 +565,10 @@ class StatsSystem {
     }
 }
 
-// Inicialización automática cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', function() {
     window.statsSystem = new StatsSystem();
 });
 
-// Para uso en otros módulos
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = StatsSystem;
 }
