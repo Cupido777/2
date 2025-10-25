@@ -1,22 +1,15 @@
 # 🎵 ODAM - Sitio Web Profesional
 
-Sitio web moderno y responsive para ODAM - Producción Musical con Propósito.
+Sitio web moderno y responsive para ODAM - Producción Musical Con Propósito.
 
-## 🚀 Despliegue en GitHub Pages
+## 🚀 Características
 
-1. **Sube todos los archivos** a tu repositorio
-2. **Ve a Settings → Pages**
-3. **Selecciona:** Source → Deploy from a branch
-4. **Branch:** main → / (root)
-5. **Save**
+- ✅ Diseño completamente responsive
+- ✅ Menú móvil funcional
+- ✅ Acordeón de servicios interactivo
+- ✅ Animaciones suaves
+- ✅ Fondo de partículas dinámico
+- ✅ Optimizado para SEO
+- ✅ Accesibilidad mejorada
 
-## 📁 Archivos Requeridos
-
-- `index.html` - Página principal
-- `styles.css` - Estilos
-- `_config.yml` - Configuración Jekyll
-- `CNAME` - Dominio personalizado
-- `logo.jpg` - Logo
-- `.gitignore` - Archivos ignorados
-
-¡Tu sitio estará activo en 2-5 minutos!
+## 📁 Estructura de Archivos
