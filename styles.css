@@ -57,42 +57,66 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 24px;
+  height: 32px;
   width: 100%;
   contain: layout style;
   position: relative;
+  background: linear-gradient(135deg, rgba(200, 162, 95, 0.1) 0%, transparent 100%);
+  border-radius: 16px;
+  padding: 4px;
+  margin: 8px 0;
 }
 
 .wave-bar {
-  width: 4px;
-  background: var(--rich-gold);
-  border-radius: 2px;
-  transition: all 0.15s ease;
   flex: 1;
-  margin: 0 1px;
+  margin: 0 2px;
+  border-radius: 8px 8px 4px 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   transform-origin: center bottom;
   will-change: transform, opacity;
+  background: linear-gradient(180deg, var(--rich-gold), var(--vibrant-gold));
+  box-shadow: 0 2px 8px rgba(200, 162, 95, 0.3);
+  min-height: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.wave-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  transition: left 0.6s ease;
+}
+
+.audio-player-mini.playing .wave-bar::before {
+  left: 100%;
 }
 
 /* Estados de las ondas cuando NO se reproduce */
 .audio-player-mini:not(.playing) .wave-bar {
   animation: waveIdle 2s ease-in-out infinite;
-  opacity: 0.4;
+  opacity: 0.6;
+  background: linear-gradient(180deg, rgba(200, 162, 95, 0.6), rgba(212, 175, 55, 0.4));
 }
 
 .wave-bar:nth-child(1) { animation-delay: 0s; height: 8px; }
-.wave-bar:nth-child(2) { animation-delay: 0.2s; height: 12px; }
-.wave-bar:nth-child(3) { animation-delay: 0.4s; height: 16px; }
-.wave-bar:nth-child(4) { animation-delay: 0.6s; height: 20px; }
-.wave-bar:nth-child(5) { animation-delay: 0.8s; height: 16px; }
-.wave-bar:nth-child(6) { animation-delay: 1.0s; height: 12px; }
-.wave-bar:nth-child(7) { animation-delay: 1.2s; height: 8px; }
-.wave-bar:nth-child(8) { animation-delay: 1.4s; height: 6px; }
+.wave-bar:nth-child(2) { animation-delay: 0.2s; height: 16px; }
+.wave-bar:nth-child(3) { animation-delay: 0.4s; height: 24px; }
+.wave-bar:nth-child(4) { animation-delay: 0.6s; height: 28px; }
+.wave-bar:nth-child(5) { animation-delay: 0.8s; height: 24px; }
+.wave-bar:nth-child(6) { animation-delay: 1.0s; height: 16px; }
+.wave-bar:nth-child(7) { animation-delay: 1.2s; height: 12px; }
+.wave-bar:nth-child(8) { animation-delay: 1.4s; height: 8px; }
 
 /* Estados de las ondas cuando SÍ se reproduce */
 .audio-player-mini.playing .wave-bar {
   animation: waveDance 0.8s ease-in-out infinite alternate;
   opacity: 1;
+  background: linear-gradient(180deg, var(--rich-gold), var(--vibrant-gold));
 }
 
 .audio-player-mini.playing .wave-bar:nth-child(1) { animation-delay: 0s; }
@@ -106,40 +130,47 @@
 
 @keyframes waveIdle {
   0%, 100% { 
-    transform: scaleY(0.6);
-    opacity: 0.3;
+    transform: scaleY(0.8);
+    opacity: 0.4;
   }
   50% { 
-    transform: scaleY(0.9);
-    opacity: 0.6;
+    transform: scaleY(1.1);
+    opacity: 0.7;
   }
 }
 
 @keyframes waveDance {
   0% { 
-    transform: scaleY(0.3);
-    opacity: 0.4;
+    transform: scaleY(0.6);
+    opacity: 0.7;
   }
   100% { 
-    transform: scaleY(1.8);
+    transform: scaleY(1.3);
     opacity: 1;
   }
 }
 
 @keyframes wavePulse {
-  0%, 100% { opacity: 0.4; transform: scaleY(0.8); }
+  0%, 100% { opacity: 0.6; transform: scaleY(0.9); }
   50% { opacity: 1; transform: scaleY(1.2); }
 }
 
 /* Efecto especial cuando la canción está en partes intensas */
 .audio-player-mini.playing .wave-bar.intense {
-  animation: waveIntense 0.3s ease-in-out infinite;
-  background: var(--vibrant-gold);
+  animation: waveIntense 0.4s ease-in-out infinite;
+  background: linear-gradient(180deg, var(--vibrant-gold), #ffd700);
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
 }
 
 @keyframes waveIntense {
-  0%, 100% { transform: scaleY(1.5); opacity: 1; }
-  50% { transform: scaleY(2.2); opacity: 0.8; }
+  0%, 100% { 
+    transform: scaleY(1.2); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: scaleY(1.8); 
+    opacity: 0.9; 
+  }
 }
 
 /* === NUEVO: INDICADOR DE CARGA === */
@@ -180,104 +211,24 @@
   50% { opacity: 1; }
 }
 
-/* === NUEVAS SECCIONES: TESTIMONIOS E INTERACCIÓN === */
-.testimonials-section {
-  background: linear-gradient(135deg, rgba(200, 162, 95, 0.03) 0%, transparent 50%);
+/* === ELIMINAR PUNTO BLANCO ANTES DE SERVICIOS === */
+.services-section::before {
+  display: none !important;
 }
 
-.interaction-section {
-  background: linear-gradient(135deg, transparent 0%, rgba(200, 162, 95, 0.02) 50%);
-}
-
-.testimonials-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: var(--space-xl);
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
-.testimonial-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-light);
-  border-radius: var(--border-radius-lg);
-  padding: var(--space-xl);
-  transition: all 0.3s ease;
+.services-section {
   position: relative;
   overflow: hidden;
 }
 
-.testimonial-card::before {
+.services-section::after {
   content: '';
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  height: 3px;
-  background: linear-gradient(135deg, var(--rich-gold), var(--vibrant-gold));
-}
-
-.testimonial-card:hover {
-  transform: translateY(-5px);
-  border-color: var(--border-gold);
-  box-shadow: var(--shadow-md);
-}
-
-.testimonial-content {
-  position: relative;
-  margin-bottom: var(--space-lg);
-}
-
-.testimonial-content p {
-  color: var(--text-secondary);
-  font-style: italic;
-  font-size: 1.1rem;
-  line-height: 1.6;
-  margin: 0;
-  position: relative;
-  padding-left: var(--space-lg);
-}
-
-.testimonial-content p::before {
-  content: '"';
-  position: absolute;
-  left: 0;
-  top: -10px;
-  font-size: 3rem;
-  color: var(--rich-gold);
-  font-family: serif;
-  line-height: 1;
-}
-
-.testimonial-author {
-  border-top: 1px solid var(--border-light);
-  padding-top: var(--space-md);
-  text-align: center;
-}
-
-.testimonial-author strong {
-  color: var(--text-primary);
-  display: block;
-  margin-bottom: var(--space-xs);
-  font-size: 1.1rem;
-}
-
-.testimonial-author span {
-  color: var(--text-muted);
-  font-size: 0.9rem;
-}
-
-/* === OPTIMIZACIONES DE IMÁGENES === */
-img {
-  max-width: 100%;
-  height: auto;
-  loading: lazy;
-}
-
-.profile-image,
-.brand img {
-  loading: eager;
+  height: 1px;
+  background: transparent;
 }
 
 /* === MANTENER TODO EL CÓDIGO EXISTENTE FUNCIONAL === */
@@ -1712,11 +1663,11 @@ footer {
   }
 
   .audio-waveform {
-    height: 16px;
+    height: 24px;
   }
 
   .wave-bar {
-    width: 2px;
+    width: 3px;
   }
 
   .audio-time {
