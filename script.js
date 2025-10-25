@@ -184,7 +184,7 @@ class WaveformSystem {
     
     bars.forEach((bar, index) => {
       const value = dataArray[index] || 0;
-      const height = 4 + (value / 255) * 20;
+      const height = 4 + (value / 255) * 28;
       const opacity = 0.4 + (value / 255) * 0.6;
       
       bar.style.height = `${height}px`;
@@ -342,7 +342,7 @@ class InteractiveParticles {
     this.particlesInstance = particlesJS('particles-js', {
       particles: {
         number: { 
-          value: 35,
+          value: 40,
           density: { 
             enable: true, 
             value_area: 800 
@@ -351,7 +351,7 @@ class InteractiveParticles {
         color: { value: "#c8a25f" },
         shape: { type: "circle" },
         opacity: { 
-          value: 0.25,
+          value: 0.3,
           random: true 
         },
         size: { 
@@ -1011,12 +1011,14 @@ Este mensaje fue enviado desde el formulario de contacto de ODAM Producción Mus
   // Cambiar versículo cada 45 segundos automáticamente
   setInterval(displayVerse, 45000);
 
-  // ===== INICIALIZACIÓN DE TARJETAS DE AUDIO (SOLO CLICK EN PLAY) =====
+  // ===== INICIALIZACIÓN DE TARJETAS DE AUDIO (6 PROYECTOS) =====
   setTimeout(() => {
     initAudioCard('project-tu-me-sostendras', 'audio-tu-me-sostendras');
     initAudioCard('project-renovados-en-tu-voluntad', 'audio-renovados-en-tu-voluntad');
     initAudioCard('project-en-ti-confio-senor', 'audio-en-ti-confio-senor');
     initAudioCard('project-el-diezmo-es-del-senor-version-bachata', 'audio-el-diezmo-es-del-senor-version-bachata');
+    initAudioCard('project-mi-refugio', 'audio-mi-refugio');
+    initAudioCard('project-aleluya', 'audio-aleluya');
   }, 500);
 
   // ===== NUEVO: OPTIMIZACIONES PARA MÓVILES =====
