@@ -468,10 +468,16 @@ class StatsSystem {
         const engagementElement = document.getElementById('stat-engagement');
         const projectsElement = document.getElementById('stat-projects');
 
-        if (visitsElement) visitsElement.textContent = this.stats.visits;
-        if (timeElement) timeElement.textContent = Math.round(this.stats.timeSpent / 60000) + 'm';
-        if (engagementElement) engagementElement.textContent = this.getEngagementScore() + '%';
-        if (projectsElement) projectsElement.textContent = this.stats.projectsViewed + this.stats.audioPlays;
+        // Usar valores por defecto 0 para evitar NaN
+        const visits = this.stats.visits || 0;
+        const timeMinutes = Math.round((this.stats.timeSpent || 0) / 60000);
+        const engagement = this.getEngagementScore();
+        const projects = (this.stats.projectsViewed || 0) + (this.stats.audioPlays || 0);
+
+        if (visitsElement) visitsElement.textContent = visits;
+        if (timeElement) timeElement.textContent = timeMinutes + 'm';
+        if (engagementElement) engagementElement.textContent = engagement + '%';
+        if (projectsElement) projectsElement.textContent = projects;
     }
 
     updateRatingDisplay() {
@@ -493,14 +499,18 @@ class StatsSystem {
     }
 
     getEngagementScore() {
-        const scrollScore = this.stats.scrollDepth;
-        const timeScore = Math.min(Math.round(this.stats.timeSpent / 60000) * 2, 100);
-        const clickScore = Math.min(this.stats.clicks * 3, 100);
-        const projectScore = Math.min((this.stats.projectsViewed + this.stats.audioPlays) * 10, 100);
-        const serviceScore = Math.min(this.stats.servicesExplored * 15, 100);
+        // Asegurar que todos los valores sean números válidos
+        const scrollScore = Number(this.stats.scrollDepth) || 0;
+        const timeScore = Math.min(Math.round((Number(this.stats.timeSpent) || 0) / 60000) * 2, 100);
+        const clickScore = Math.min((Number(this.stats.clicks) || 0) * 3, 100);
+        const projectScore = Math.min(((Number(this.stats.projectsViewed) || 0) + (Number(this.stats.audioPlays) || 0)) * 10, 100);
+        const serviceScore = Math.min((Number(this.stats.servicesExplored) || 0) * 15, 100);
         
+        // Calcular score evitando NaN
         const totalScore = (scrollScore + timeScore + clickScore + projectScore + serviceScore) / 5;
-        return Math.round(Math.max(0, Math.min(100, totalScore)));
+        const finalScore = Math.round(Math.max(0, Math.min(100, totalScore)));
+        
+        return isNaN(finalScore) ? 0 : finalScore;
     }
 
     getRatingText() {
