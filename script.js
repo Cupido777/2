@@ -1,92 +1,150 @@
-// script.js - ODAM PRODUCCIÓN MUSICAL - COMPLETO Y OPTIMIZADO
+// script.js - ODAM PRODUCCIÓN MUSICAL - SISTEMA DE AUDIO CORREGIDO
 
-// === SISTEMA DE AUDIO COMPLETAMENTE FUNCIONAL ===
-function initAudioPlayer(cardId, audioId) {
-    console.log(`🔊 Intentando inicializar: ${cardId} -> ${audioId}`);
-    
-    const projectCard = document.getElementById(cardId);
-    const audio = document.getElementById(audioId);
-    
-    if (!projectCard) {
-        console.error(`❌ No se encontró la tarjeta: ${cardId}`);
-        return;
-    }
-    
-    if (!audio) {
-        console.error(`❌ No se encontró el audio: ${audioId}`);
-        return;
-    }
-    
-    console.log(`✅ Audio encontrado: ${audioId}, src: ${audio.src}`);
-
-    const playBtn = projectCard.querySelector('.audio-play-btn');
-    const progressBar = projectCard.querySelector('.audio-progress');
-    const audioTime = projectCard.querySelector('.audio-time');
-    const waveform = projectCard.querySelector('.audio-waveform');
-    const waveBars = waveform ? waveform.querySelectorAll('.wave-bar') : [];
-    const audioPlayer = projectCard.querySelector('.audio-player-mini');
-
-    // Función para formatear tiempo
-    function formatTime(seconds) {
-        if (isNaN(seconds)) return '0:00';
-        const min = Math.floor(seconds / 60);
-        const sec = Math.floor(seconds % 60);
-        return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+class AudioPlayerSystem {
+    constructor() {
+        this.audioPlayers = new Map();
+        this.currentlyPlaying = null;
+        this.init();
     }
 
-    // Actualizar progreso
-    function updateProgress() {
-        if (audio.duration && progressBar) {
-            const percent = (audio.currentTime / audio.duration) * 100;
-            progressBar.style.width = `${percent}%`;
-        }
-        if (audioTime) {
-            audioTime.textContent = formatTime(audio.currentTime);
-        }
+    init() {
+        console.log('🎵 Sistema de audio inicializado');
+        this.initializeAllAudioPlayers();
+        this.setupGlobalEventListeners();
     }
 
-    // Actualizar ondas visuales
-    function updateWaveform() {
-        if (audio.paused || !waveBars.length) return;
-        
-        waveBars.forEach((bar, index) => {
-            const randomHeight = 8 + Math.random() * 24;
-            const opacity = 0.6 + Math.random() * 0.4;
-            
-            bar.style.height = `${randomHeight}px`;
-            bar.style.opacity = opacity;
+    initializeAllAudioPlayers() {
+        const audioConfigs = [
+            { card: 'project-tu-me-sostendras', audio: 'audio-tu-me-sostendras' },
+            { card: 'project-renovados-en-tu-voluntad', audio: 'audio-renovados-en-tu-voluntad' },
+            { card: 'project-en-ti-confio-senor', audio: 'audio-en-ti-confio-senor' },
+            { card: 'project-el-diezmo-es-del-senor-version-bachata', audio: 'audio-el-diezmo-es-del-senor-version-bachata' },
+            { card: 'project-jonas-y-el-gran-pez', audio: 'audio-jonas-y-el-gran-pez' },
+            { card: 'project-el-hijo-de-manoa', audio: 'audio-el-hijo-de-manoa' }
+        ];
+
+        audioConfigs.forEach(config => {
+            this.setupAudioPlayer(config.card, config.audio);
         });
+
+        console.log(`✅ ${audioConfigs.length} reproductores de audio inicializados`);
     }
 
-    // Alternar reproducción
-    function togglePlay() {
-        // Pausar todos los demás audios
-        document.querySelectorAll('audio').forEach(otherAudio => {
-            if (otherAudio !== audio && !otherAudio.paused) {
-                otherAudio.pause();
-                otherAudio.currentTime = 0;
-                const otherPlayer = otherAudio.closest('.project-card')?.querySelector('.audio-player-mini');
-                if (otherPlayer) {
-                    otherPlayer.classList.remove('playing');
-                    const otherPlayBtn = otherPlayer.querySelector('.audio-play-btn');
-                    if (otherPlayBtn) otherPlayBtn.innerHTML = '<i class="fas fa-play"></i>';
-                    // Detener ondas de otros audios
-                    const otherWaveform = otherPlayer.querySelector('.audio-waveform');
-                    if (otherWaveform && otherWaveform.interval) {
-                        clearInterval(otherWaveform.interval);
-                    }
+    setupAudioPlayer(cardId, audioId) {
+        const card = document.getElementById(cardId);
+        const audio = document.getElementById(audioId);
+        
+        if (!card || !audio) {
+            console.warn(`❌ No se pudo encontrar: ${cardId} o ${audioId}`);
+            return;
+        }
+
+        const player = {
+            card,
+            audio,
+            playBtn: card.querySelector('.audio-play-btn'),
+            progressBar: card.querySelector('.audio-progress'),
+            audioTime: card.querySelector('.audio-time'),
+            waveform: card.querySelector('.audio-waveform'),
+            waveBars: card.querySelectorAll('.wave-bar'),
+            audioPlayer: card.querySelector('.audio-player-mini'),
+            isPlaying: false,
+            waveformInterval: null
+        };
+
+        this.audioPlayers.set(audioId, player);
+        this.bindPlayerEvents(player, audioId);
+    }
+
+    bindPlayerEvents(player, audioId) {
+        const { audio, playBtn, progressBar, audioTime, waveform, waveBars, audioPlayer } = player;
+
+        // Función para formatear tiempo
+        const formatTime = (seconds) => {
+            if (isNaN(seconds)) return '0:00';
+            const min = Math.floor(seconds / 60);
+            const sec = Math.floor(seconds % 60);
+            return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+        };
+
+        // Actualizar progreso
+        const updateProgress = () => {
+            if (audio.duration && progressBar) {
+                const percent = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = `${percent}%`;
+            }
+            if (audioTime) {
+                audioTime.textContent = formatTime(audio.currentTime);
+            }
+        };
+
+        // Animación de ondas mejorada
+        const updateWaveform = () => {
+            if (audio.paused || !waveBars.length) return;
+            
+            waveBars.forEach((bar, index) => {
+                const baseHeight = [8, 16, 24, 28, 24, 16, 12, 8][index] || 12;
+                const variation = Math.random() * 8;
+                const height = baseHeight + variation;
+                const opacity = 0.7 + Math.random() * 0.3;
+                
+                bar.style.height = `${height}px`;
+                bar.style.opacity = opacity;
+            });
+        };
+
+        // Iniciar animación de ondas
+        const startWaveAnimation = () => {
+            if (player.waveformInterval) {
+                clearInterval(player.waveformInterval);
+            }
+            player.waveformInterval = setInterval(updateWaveform, 120);
+        };
+
+        // Detener animación de ondas
+        const stopWaveAnimation = () => {
+            if (player.waveformInterval) {
+                clearInterval(player.waveformInterval);
+                player.waveformInterval = null;
+            }
+            waveBars.forEach(bar => {
+                bar.style.height = '';
+                bar.style.opacity = '0.6';
+            });
+        };
+
+        // Toggle reproducción - CORREGIDO
+        const togglePlay = () => {
+            // Si este audio ya está reproduciéndose, pausarlo
+            if (player.isPlaying) {
+                audio.pause();
+                player.isPlaying = false;
+                audioPlayer.classList.remove('playing');
+                playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                stopWaveAnimation();
+                this.currentlyPlaying = null;
+                return;
+            }
+
+            // Pausar cualquier audio que se esté reproduciendo
+            if (this.currentlyPlaying && this.currentlyPlaying !== audioId) {
+                const previousPlayer = this.audioPlayers.get(this.currentlyPlaying);
+                if (previousPlayer) {
+                    previousPlayer.audio.pause();
+                    previousPlayer.isPlaying = false;
+                    previousPlayer.audioPlayer.classList.remove('playing');
+                    previousPlayer.playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    stopWaveAnimation.call(previousPlayer);
                 }
             }
-        });
 
-        if (audio.paused) {
+            // Reproducir este audio
             audio.play().then(() => {
+                player.isPlaying = true;
+                this.currentlyPlaying = audioId;
                 audioPlayer.classList.add('playing');
                 playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-                // Iniciar animación de ondas
-                if (waveform) {
-                    waveform.interval = setInterval(updateWaveform, 150);
-                }
+                startWaveAnimation();
                 
                 // Disparar evento para estadísticas
                 document.dispatchEvent(new CustomEvent('audioPlay'));
@@ -96,108 +154,72 @@ function initAudioPlayer(cardId, audioId) {
                 playBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
                 playBtn.style.color = '#ff6b6b';
             });
-        } else {
-            audio.pause();
+        };
+
+        // Event listeners
+        playBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            togglePlay();
+        });
+
+        audio.addEventListener('timeupdate', updateProgress);
+        
+        audio.addEventListener('ended', () => {
+            audio.currentTime = 0;
+            player.isPlaying = false;
             audioPlayer.classList.remove('playing');
             playBtn.innerHTML = '<i class="fas fa-play"></i>';
-            // Detener animación de ondas
-            if (waveform && waveform.interval) {
-                clearInterval(waveform.interval);
+            if (progressBar) progressBar.style.width = '0%';
+            if (audioTime) audioTime.textContent = '0:00';
+            stopWaveAnimation();
+            this.currentlyPlaying = null;
+        });
+
+        audio.addEventListener('loadedmetadata', () => {
+            if (audioTime) audioTime.textContent = '0:00';
+        });
+
+        audio.addEventListener('error', (e) => {
+            console.error(`Error en audio ${audioId}:`, e);
+            playBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+            playBtn.style.color = '#ff6b6b';
+        });
+    }
+
+    setupGlobalEventListeners() {
+        // Pausar todos los audios al hacer clic fuera
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.audio-player-mini') && !e.target.closest('.audio-play-btn')) {
+                this.pauseAll();
             }
-        }
+        });
+
+        // Pausar todos los audios al cambiar de sección
+        window.addEventListener('scroll', () => {
+            // Opcional: pausar al hacer scroll lejos del reproductor
+        });
     }
 
-    // Event listeners
-    playBtn.addEventListener('click', togglePlay);
-    
-    audio.addEventListener('timeupdate', updateProgress);
-    
-    audio.addEventListener('play', () => {
-        audioPlayer.classList.add('playing');
-        playBtn.innerHTML = '<i class="fas fa-pause"></i>';
-    });
-    
-    audio.addEventListener('pause', () => {
-        audioPlayer.classList.remove('playing');
-        playBtn.innerHTML = '<i class="fas fa-play"></i>';
-        // Resetear ondas
-        if (waveBars.length) {
-            waveBars.forEach(bar => {
-                bar.style.height = '';
-                bar.style.opacity = '0.6';
-            });
-        }
-    });
-    
-    audio.addEventListener('ended', () => {
-        audio.currentTime = 0;
-        audioPlayer.classList.remove('playing');
-        playBtn.innerHTML = '<i class="fas fa-play"></i>';
-        if (progressBar) progressBar.style.width = '0%';
-        if (audioTime) audioTime.textContent = '0:00';
-        if (waveform && waveform.interval) {
-            clearInterval(waveform.interval);
-        }
-    });
-
-    audio.addEventListener('loadedmetadata', () => {
-        if (audioTime) audioTime.textContent = '0:00';
-    });
-
-    // Manejar errores de audio
-    audio.addEventListener('error', (e) => {
-        console.error(`Error cargando audio ${audioId}:`, e);
-        playBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
-        playBtn.style.color = '#ff6b6b';
-    });
-}
-
-// === INICIALIZACIÓN DE TODOS LOS AUDIOS - VERSIÓN CORREGIDA ===
-function initializeAllAudioPlayers() {
-    console.log('🎵 Inicializando reproductores de audio...');
-    
-    const audioPlayers = [
-        { card: 'project-tu-me-sostendras', audio: 'audio-tu-me-sostendras' },
-        { card: 'project-renovados-en-tu-voluntad', audio: 'audio-renovados-en-tu-voluntad' },
-        { card: 'project-en-ti-confio-senor', audio: 'audio-en-ti-confio-senor' },
-        { card: 'project-el-diezmo-es-del-senor-version-bachata', audio: 'audio-el-diezmo-es-del-senor-version-bachata' },
-        // NUEVOS AUDIOS CORREGIDOS
-        { card: 'project-jonas-y-el-gran-pez', audio: 'audio-jonas-y-el-gran-pez' },
-        { card: 'project-el-hijo-de-manoa', audio: 'audio-el-hijo-de-manoa' }
-    ];
-
-    audioPlayers.forEach((player, index) => {
-        console.log(`🎵 Inicializando ${player.audio}...`);
-        setTimeout(() => {
-            initAudioPlayer(player.card, player.audio);
-        }, index * 100); // Pequeño delay para evitar conflictos
-    });
-}
-
-// === INICIALIZACIÓN FORZADA DE AUDIOS PROBLEMÁTICOS ===
-function forceInitializeProblematicAudios() {
-    console.log('🔄 Forzando inicialización de audios problemáticos...');
-    
-    // Inicializar Jonás manualmente
-    const jonasAudio = document.getElementById('audio-jonas-y-el-gran-pez');
-    const jonasCard = document.getElementById('project-jonas-y-el-gran-pez');
-    
-    if (jonasAudio && jonasCard) {
-        console.log('✅ Forzando inicialización de Jonás...');
-        initAudioPlayer('project-jonas-y-el-gran-pez', 'audio-jonas-y-el-gran-pez');
-    } else {
-        console.error('❌ No se pudo forzar Jonás - elementos no encontrados');
-    }
-    
-    // Inicializar Manoa manualmente
-    const manoaAudio = document.getElementById('audio-el-hijo-de-manoa');
-    const manoaCard = document.getElementById('project-el-hijo-de-manoa');
-    
-    if (manoaAudio && manoaCard) {
-        console.log('✅ Forzando inicialización de Manoa...');
-        initAudioPlayer('project-el-hijo-de-manoa', 'audio-el-hijo-de-manoa');
-    } else {
-        console.error('❌ No se pudo forzar Manoa - elementos no encontrados');
+    pauseAll() {
+        this.audioPlayers.forEach((player, audioId) => {
+            if (player.isPlaying) {
+                player.audio.pause();
+                player.isPlaying = false;
+                player.audioPlayer.classList.remove('playing');
+                player.playBtn.innerHTML = '<i class="fas fa-play"></i>';
+                
+                // Detener animación de ondas
+                if (player.waveformInterval) {
+                    clearInterval(player.waveformInterval);
+                    player.waveformInterval = null;
+                }
+                player.waveBars.forEach(bar => {
+                    bar.style.height = '';
+                    bar.style.opacity = '0.6';
+                });
+            }
+        });
+        this.currentlyPlaying = null;
     }
 }
 
@@ -695,7 +717,6 @@ class LoadingSystem {
 
 // === ELIMINAR BOTÓN BLANCO ===
 function fixWhiteButton() {
-    // Eliminar cualquier elemento que cause el botón blanco
     const whiteButton = document.querySelector('.nav-toggle');
     if (whiteButton && window.innerWidth > 768) {
         whiteButton.style.display = 'none';
@@ -718,6 +739,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const particlesSystem = new InteractiveParticles();
     particlesSystem.init();
 
+    // Sistema de audio - NUEVO Y MEJORADO
+    window.audioSystem = new AudioPlayerSystem();
+
     // Optimizar event listeners
     optimizeEventListeners();
 
@@ -728,14 +752,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initBibleVerses();
     initContactForm();
     fixWhiteButton();
-
-    // Inicializar audios después de que todo esté listo
-    setTimeout(() => {
-        initializeAllAudioPlayers();
-        
-        // Inicialización forzada adicional después de 3 segundos
-        setTimeout(forceInitializeProblematicAudios, 3000);
-    }, 1500);
 
     // Prefers reduced motion
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -756,27 +772,3 @@ window.addEventListener('error', function(e) {
 window.addEventListener('unhandledrejection', function(e) {
     console.error('Promise rechazada:', e.reason);
 });
-
-// === COMPATIBILIDAD Y POLYFILLS ===
-if (!('scrollBehavior' in document.documentElement.style)) {
-    // Polyfill para smooth scroll si es necesario
-    console.log('Cargando polyfill para smooth scroll...');
-}
-
-// Performance monitoring
-if ('performance' in window) {
-    window.addEventListener('load', () => {
-        setTimeout(() => {
-            const perfData = performance.timing;
-            const loadTime = perfData.loadEventEnd - perfData.navigationStart;
-            console.log('Tiempo de carga:', loadTime + 'ms');
-        }, 0);
-    });
-}
-
-// Service Worker para futuro PWA
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', function() {
-        console.log('Service Worker listo para implementar en el futuro');
-    });
-}
