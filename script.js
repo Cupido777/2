@@ -2,13 +2,22 @@
 
 // === SISTEMA DE AUDIO COMPLETAMENTE FUNCIONAL ===
 function initAudioPlayer(cardId, audioId) {
+    console.log(`🔊 Intentando inicializar: ${cardId} -> ${audioId}`);
+    
     const projectCard = document.getElementById(cardId);
     const audio = document.getElementById(audioId);
     
-    if (!projectCard || !audio) {
-        console.error(`Elementos no encontrados: ${cardId} o ${audioId}`);
+    if (!projectCard) {
+        console.error(`❌ No se encontró la tarjeta: ${cardId}`);
         return;
     }
+    
+    if (!audio) {
+        console.error(`❌ No se encontró el audio: ${audioId}`);
+        return;
+    }
+    
+    console.log(`✅ Audio encontrado: ${audioId}, src: ${audio.src}`);
 
     const playBtn = projectCard.querySelector('.audio-play-btn');
     const progressBar = projectCard.querySelector('.audio-progress');
@@ -78,9 +87,14 @@ function initAudioPlayer(cardId, audioId) {
                 if (waveform) {
                     waveform.interval = setInterval(updateWaveform, 150);
                 }
+                
+                // Disparar evento para estadísticas
+                document.dispatchEvent(new CustomEvent('audioPlay'));
+                
             }).catch(error => {
                 console.error('Error reproduciendo audio:', error);
                 playBtn.innerHTML = '<i class="fas fa-exclamation-triangle"></i>';
+                playBtn.style.color = '#ff6b6b';
             });
         } else {
             audio.pause();
@@ -138,20 +152,53 @@ function initAudioPlayer(cardId, audioId) {
     });
 }
 
-// === INICIALIZACIÓN DE TODOS LOS AUDIOS ===
+// === INICIALIZACIÓN DE TODOS LOS AUDIOS - VERSIÓN CORREGIDA ===
 function initializeAllAudioPlayers() {
+    console.log('🎵 Inicializando reproductores de audio...');
+    
     const audioPlayers = [
         { card: 'project-tu-me-sostendras', audio: 'audio-tu-me-sostendras' },
         { card: 'project-renovados-en-tu-voluntad', audio: 'audio-renovados-en-tu-voluntad' },
         { card: 'project-en-ti-confio-senor', audio: 'audio-en-ti-confio-senor' },
         { card: 'project-el-diezmo-es-del-senor-version-bachata', audio: 'audio-el-diezmo-es-del-senor-version-bachata' },
-        { card: 'project-mi-refugio', audio: 'audio-mi-refugio' },
-        { card: 'project-aleluya', audio: 'audio-aleluya' }
+        // NUEVOS AUDIOS CORREGIDOS
+        { card: 'project-jonas-y-el-gran-pez', audio: 'audio-jonas-y-el-gran-pez' },
+        { card: 'project-el-hijo-de-manoa', audio: 'audio-el-hijo-de-manoa' }
     ];
 
-    audioPlayers.forEach(player => {
-        initAudioPlayer(player.card, player.audio);
+    audioPlayers.forEach((player, index) => {
+        console.log(`🎵 Inicializando ${player.audio}...`);
+        setTimeout(() => {
+            initAudioPlayer(player.card, player.audio);
+        }, index * 100); // Pequeño delay para evitar conflictos
     });
+}
+
+// === INICIALIZACIÓN FORZADA DE AUDIOS PROBLEMÁTICOS ===
+function forceInitializeProblematicAudios() {
+    console.log('🔄 Forzando inicialización de audios problemáticos...');
+    
+    // Inicializar Jonás manualmente
+    const jonasAudio = document.getElementById('audio-jonas-y-el-gran-pez');
+    const jonasCard = document.getElementById('project-jonas-y-el-gran-pez');
+    
+    if (jonasAudio && jonasCard) {
+        console.log('✅ Forzando inicialización de Jonás...');
+        initAudioPlayer('project-jonas-y-el-gran-pez', 'audio-jonas-y-el-gran-pez');
+    } else {
+        console.error('❌ No se pudo forzar Jonás - elementos no encontrados');
+    }
+    
+    // Inicializar Manoa manualmente
+    const manoaAudio = document.getElementById('audio-el-hijo-de-manoa');
+    const manoaCard = document.getElementById('project-el-hijo-de-manoa');
+    
+    if (manoaAudio && manoaCard) {
+        console.log('✅ Forzando inicialización de Manoa...');
+        initAudioPlayer('project-el-hijo-de-manoa', 'audio-el-hijo-de-manoa');
+    } else {
+        console.error('❌ No se pudo forzar Manoa - elementos no encontrados');
+    }
 }
 
 // === SISTEMA DE PARTÍCULAS INTERACTIVAS ===
@@ -685,6 +732,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Inicializar audios después de que todo esté listo
     setTimeout(() => {
         initializeAllAudioPlayers();
+        
+        // Inicialización forzada adicional después de 3 segundos
+        setTimeout(forceInitializeProblematicAudios, 3000);
     }, 1500);
 
     // Prefers reduced motion
